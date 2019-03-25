@@ -1,0 +1,52 @@
+---
+title: "Assignment8"
+author: "Karuna"
+date: "March 20, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+library(rvest)
+library(stringr)
+library(dplyr)
+library(ggplot2)
+
+url <- 'https://en.wikipedia.org/wiki/Military_budget_of_the_United_States'
+
+page<-read_html(url)
+
+table_data <- page %>% html_node(".wikitable") %>% html_table()
+
+table_data_transpose <- data.frame(t(table_data))
+
+rownames(table_data_transpose) <- NULL
+
+table_data_transpose <- table_data_transpose[-1,]
+
+colnames(table_data_transpose)<-c("Years","DefenseBudget_Billions","TotalBudget_Trillions","DefenseBudget_Pct","DefenseSpendingChange_Pct")
+
+table_data_transpose$DefenseBudget_Pct <- as.numeric(as.character(table_data_transpose$DefenseBudget_Pct))
+table_data_transpose$TotalBudget_Trillions <- as.numeric(as.character(table_data_transpose$TotalBudget_Trillions))
+
+clusterData<-kmeans(table_data_transpose[,3:4],3,iter.max = 100,nstart = 10)
+
+table_data_transpose$cluster<-as.factor(clusterData$cluster)
+
+centers<-data.frame(clusterData$centers)
+
+centers$cluster<-as.factor(sort(unique(clusterData$cluster)))
+
+ggplot(data = table_data_transpose, aes(x=table_data_transpose$TotalBudget_Trillions, y=table_data_transpose$DefenseBudget_Pct, color=table_data_transpose$cluster)) + geom_point(size=3) + xlab("Total Budget in Trillions") + ylab("Defense Budget Pct") + labs(color = "Clusters") + geom_point(data=centers, aes(x=centers$TotalBudget_Trillions, y=centers$DefenseBudget_Pct,color=centers$cluster),shape=3, size=3)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
